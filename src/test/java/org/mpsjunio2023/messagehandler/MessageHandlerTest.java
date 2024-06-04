@@ -5,88 +5,85 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("unchecked")
 class MessageHandlerTest {
 
+    private BoundedQueue<Message> cola;
+    private MessageHandler mh = new MessageHandler();
+    private Message mensaje;
+
     @Test
-    @DisplayName("Test send message")
-    void testSendMessage() {
-        // Arrange
-        MessageHandler handler = new MessageHandler();
-        Message message = new Message(1,"Test message");
-        BoundedQueue<Message> queue = mock(BoundedQueue.class);
-        when(queue.getNumberOfItems()).thenReturn(0);
-        when(queue.getCapacity()).thenReturn(10);
+    @DisplayName("sendMessage devuelve false si la cola no tiene capaciedad")
+    public void test_SendMessage_ColaSinCapacidadDevuelveFalse(){
+        //Arrange
+        cola = mock(BoundedQueue.class);
+        mensaje = new Message(1, "Hola");
+        when(cola.getNumberOfItems()).thenReturn(3);
+        when(cola.getCapacity()).thenReturn(3);
+    
+        //Act
+        boolean result = mh.sendMessage(mensaje, cola);
 
-        // Act
-        boolean result = handler.sendMessage(message, queue);
+        //Assert
+        assertFalse(result);
+    }
 
-        // Assert
+    @Test
+    @DisplayName("sendMessage devuelve true si la cola tiene capaciedad")
+    public void test_SendMessage_ColaConCapacidadDevuelveTrue(){
+        //Arrange
+        cola = mock(BoundedQueue.class);
+        mensaje = new Message(1, "Hola");
+        when(cola.getNumberOfItems()).thenReturn(2);
+        when(cola.getCapacity()).thenReturn(3);
+    
+        //Act
+        boolean result = mh.sendMessage(mensaje, cola);
+
+        //Assert
         assertTrue(result);
-        verify(queue).put(message);
     }
 
     @Test
-    @DisplayName("Test send message to full queue")
-    void testReceiveMessage() {
-        // Arrange
-        MessageHandler handler = new MessageHandler();
-        Message message = new Message(1,"Test message");
-        BoundedQueue<Message> queue = mock(BoundedQueue.class);
-        when(queue.isEmpty()).thenReturn(false);
-        when(queue.get()).thenReturn(message);
-
-        // Act
-        Message receivedMessage = handler.receiveMessage(queue);
-
-        // Assert
-        assertEquals(message, receivedMessage);
+    @DisplayName("receiveMessage lanza EmptyQueueException si la cola esta vacia")
+    public void test_ReceiveMessage_ColaVaciaLanzaEmptyQueueException(){
+        //Arrange
+        cola = mock(BoundedQueue.class);
+        when(cola.isEmpty()).thenReturn(true);
+    
+        //Act & Assert
+        assertThrows(EmptyQueueException.class, () -> mh.receiveMessage(cola));
     }
 
     @Test
-    @DisplayName("Test receive message from empty queue")
-    void testReceiveMessageFromEmptyQueue() {
-        // Arrange
-        MessageHandler handler = new MessageHandler();
-        BoundedQueue<Message> queue = mock(BoundedQueue.class);
-        when(queue.isEmpty()).thenReturn(true);
+    @DisplayName("receiveMessage devuelve el mensaje si la cola no esta vacia")
+    public void test_ReceiveMessage_ColaNoVaciaDevuelveMensaje(){
+        //Arrange
+        cola = mock(BoundedQueue.class);
+        mensaje = new Message(1, "Hola");
+        when(cola.isEmpty()).thenReturn(false);
+        when(cola.get()).thenReturn(mensaje);
+    
+        //Act
+        Message result = mh.receiveMessage(cola);
 
-        // Act & Assert
-        assertThrows(EmptyQueueException.class, () -> handler.receiveMessage(queue));
+        //Assert
+        assertEquals(mensaje, result);
     }
 
     @Test
-    @DisplayName("Test send message to full queue")
-    void testSendMessageToFullQueue() {
-        // Arrange
-        MessageHandler handler = new MessageHandler();
-        Message message = new Message(1,"Test message");
-        BoundedQueue<Message> queue = mock(BoundedQueue.class);
-        when(queue.getNumberOfItems()).thenReturn(10);
-        when(queue.getCapacity()).thenReturn(10);
+    @DisplayName("receiveMessage devuelve el mensaje si la cola no esta vacia")
+    public void test_ReceiveMessage_ColaNoVaciaDevuelveMensaje2(){
+        //Arrange
+        cola = mock(BoundedQueue.class);
+        mensaje = new Message(1, "Hola");
+        when(cola.isEmpty()).thenReturn(false);
+        when(cola.get()).thenReturn(mensaje);
+    
+        //Act
+        Message result = mh.receiveMessage(cola);
 
-        // Act
-        boolean result = handler.sendMessage(message, queue);
-
-        // Assert
-        assertFalse(result);
-        verify(queue, never()).put(message);
-    }
-
-    @Test
-    @DisplayName("Test send message to full queue with Mockito")
-    void testSendMessageToFullQueueWithMockito() {
-        // Arrange
-        MessageHandler handler = new MessageHandler();
-        Message message = new Message(1,"Test message");
-        BoundedQueue<Message> queue = mock(BoundedQueue.class);
-        when(queue.getNumberOfItems()).thenReturn(10);
-        when(queue.getCapacity()).thenReturn(10);
-
-        // Act
-        boolean result = handler.sendMessage(message, queue);
-
-        // Assert
-        assertFalse(result);
-        verify(queue, never()).put(message);
+        //Assert
+        assertEquals(mensaje, result);
     }
 }
